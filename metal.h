@@ -20,10 +20,6 @@ public:
         attenuation = albedo;
         return dot(scattered.direction(), rec.normal) > 0;
     }
-
-    vec3 reflect(const vec3 &v, const vec3 &n) const {
-        return v - 2 * dot(v, n) * n;
-    }
 };
 
 #endif //RAYTRACER_METAL_H
