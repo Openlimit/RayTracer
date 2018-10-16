@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include <iostream>
 
+#ifdef _WIN32
+#include "drand48.h"
+#endif
+
 class vec3 {
 public:
     float e[3];
@@ -20,7 +24,8 @@ public:
         e[1] = e1;
         e[2] = e2;
     }
-    vec3(const vec3 &v){
+
+    vec3(const vec3 &v) {
         e[0] = v.e[0];
         e[1] = v.e[1];
         e[2] = v.e[2];
@@ -168,5 +173,22 @@ inline vec3 &vec3::operator/=(const float t) {
 inline vec3 unit_vector(vec3 v) {
     return v / v.length();
 }
+
+vec3 random_unit_sphere() {
+    vec3 p;
+    do {
+        p = 2.0 * vec3(drand48(), drand48(), drand48()) - vec3(1.0, 1.0, 1.0);
+    } while (p.squared_length() >= 1.0);
+    return p;
+}
+
+vec3 random_in_unit_disk() {
+    vec3 p;
+    do {
+        p = 2.0 * vec3(drand48(), drand48(), 0) - vec3(1, 1, 0);
+    } while (dot(p, p) >= 1.0);
+    return p;
+}
+
 
 #endif //RAYTRACER_VEC3_H
