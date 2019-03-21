@@ -7,7 +7,7 @@
 
 #include "hitable.h"
 
-class sphere : public hitable {
+class sphere : public hitable{
 public:
     vec3 center;
     float radius;
