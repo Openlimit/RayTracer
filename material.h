@@ -93,4 +93,42 @@ public:
 
 };
 
+struct mtl {
+    float illum;
+    float ni;
+    int ns;
+    vec3 kd;
+    vec3 ka;
+    vec3 tf;
+    vec3 ks;
+};
+
+class brdf : public material {
+public:
+    mtl brdf_mtl;
+    pdf *pdf_ptr;
+
+    brdf(mtl &m, pdf *p) : brdf_mtl(m), pdf_ptr(p) {}
+
+    float scattering_pdf(const ray &r_in, const hit_record &rec, const ray &scattered) const {
+        float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+        if (cosine < 0)
+            cosine = 0;
+        return cosine / M_PI;
+    }
+
+    bool scatter(const ray &r_in, const hit_record &rec, scatter_record &srec) const {
+        if (brdf_mtl.ka[0] > 0 || brdf_mtl.ka[1] > 0 || brdf_mtl.ka[2] > 0)
+            return false;
+
+        srec.attenuation = brdf_mtl.kd;
+        srec.pdf_ptr = pdf_ptr;
+        return true;
+    }
+
+    virtual vec3 emitted(const ray &r_in, const hit_record &rec) const {
+        return brdf_mtl.ka;
+    }
+};
+
 #endif //RAYTRACER_MATERIAL_H

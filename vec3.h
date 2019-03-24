@@ -15,6 +15,41 @@
 
 #endif
 
+class vec3i {
+public:
+    int e[3];
+
+    vec3i(int e0, int e1, int e2) {
+        e[0] = e0;
+        e[1] = e1;
+        e[2] = e2;
+    }
+
+    vec3i(const vec3i &v) {
+        e[0] = v.e[0];
+        e[1] = v.e[1];
+        e[2] = v.e[2];
+    }
+
+    inline int x() const { return e[0]; }
+
+    inline int y() const { return e[1]; }
+
+    inline int z() const { return e[2]; }
+
+    inline const vec3i &operator+() const { return *this; }
+
+    inline vec3i operator-() const { return vec3i(-e[0], -e[1], -e[2]); }
+
+    inline float operator[](int i) const { return e[i]; }
+
+    inline int &operator[](int i) { return e[i]; }
+
+    inline int squared_length() const {
+        return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
+    }
+};
+
 class vec3 {
 public:
     float e[3];
