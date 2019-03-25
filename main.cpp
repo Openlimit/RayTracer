@@ -13,6 +13,7 @@
 #include "material.h"
 #include "triangle.h"
 #include "obj_load.h"
+#include "texture.h"
 
 using namespace std;
 
@@ -97,11 +98,14 @@ void cup(int nx, int ny, camera **cam, hitable **world, pdf **light) {
     float vfov = 60.0;
     *cam = new camera(lookfrom, lookat, up, vfov, float(nx) / float(ny), aperture, dist_to_focus, 0.0, 1.0);
 
-    vector<hitable *> mesh;
-    load_obj("room.obj", mesh);
-    *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
-    hitable *light_shape = new yz_rect(1.0246, 2.0246, -0.5, 0.5, -2.758771896, nullptr);
+    hitable *light_shape = new yz_rect(1.0246, 2.0246, -0.5, 0.5, -2.058771896,
+                                       new diffuse_light(new constant_texture(vec3(15, 15, 15))));
     *light = new hitable_pdf(light_shape);
+
+    vector<hitable *> mesh;
+    load_obj("cup.obj", mesh);
+    mesh.emplace_back(light_shape);
+    *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
 }
 
 int main() {
@@ -112,7 +116,8 @@ int main() {
     camera *cam;
     hitable *world;
     pdf *light_pdf;
-    room(nx, ny, &cam, &world, &light_pdf);
+//    room(nx, ny, &cam, &world, &light_pdf);
+    cup(nx, ny, &cam, &world, &light_pdf);
 
     for (int j = ny - 1; j >= 0; --j) {
         cout << j << endl;
