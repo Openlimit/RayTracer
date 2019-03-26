@@ -28,9 +28,8 @@ void get_face(const string &face_line, vector<vec3i> &face) {
     }
 }
 
-void load_mtl(const string &name, map<string, material *> &mtl_map) {
+void load_mtl(const string &name, map<string, Phong *> &mtl_map) {
     ifstream fs(name, ios::in);
-    pdf *cosine = new cosine_pdf();
 
     string flag;
     mtl m;
@@ -40,7 +39,7 @@ void load_mtl(const string &name, map<string, material *> &mtl_map) {
         fs >> flag;
         if (flag == "newmtl") {
             if (!begin) {
-                mtl_map[mtl_name] = new brdf(m, cosine);
+                mtl_map[mtl_name] = new Phong(m);
                 m = mtl();
             } else
                 begin = false;
@@ -63,20 +62,15 @@ void load_mtl(const string &name, map<string, material *> &mtl_map) {
             cerr << "load_mtl fail: " << flag << endl;
     }
     if (!begin)
-        mtl_map[mtl_name] = new brdf(m, cosine);
+        mtl_map[mtl_name] = new Phong(m);
 }
 
 void load_obj(const string &name, vector<hitable *> &mesh) {
     ifstream fs(name, std::ios::in);
-    map<string, material *> mtl_map;
+    map<string, Phong *> mtl_map;
     vector<vec3> points;
     vector<vec3> vns;
     vector<vec3i> face;
-
-    pdf *cosine = new cosine_pdf();
-    mtl tmp_mtl;
-    tmp_mtl.kd = vec3(0.65, 0.05, 0.05);
-    material *red = new brdf(tmp_mtl, cosine);
 
     string flag;
     string cur_mtl;
@@ -108,9 +102,14 @@ void load_obj(const string &name, vector<hitable *> &mesh) {
             face.clear();
             get_face(face_line, face);
             if (mtl_map.find(cur_mtl) == mtl_map.end()) {
-                mtl_map[cur_mtl] = red;
                 cerr << "mtl_map error：" << cur_mtl << endl;
             }
+
+            vec3 ka = mtl_map[cur_mtl]->phong_mtl.ka;
+            if (ka[0] > 0 || ka[1] > 0 || ka[2] > 0)
+                continue;
+//            if (cur_mtl != string("breakfast_room_cup_Material_005"))
+//                continue;
 
             if (face.size() == 3) {
                 hitable *tri = new triangle(points[face[0][0]], points[face[1][0]], points[face[2][0]],

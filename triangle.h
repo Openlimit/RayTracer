@@ -38,7 +38,7 @@ bool IntersectTriangle(const vec3 &orig, const vec3 &dir,
     }
 
     // If determinant is near zero, ray lies in plane of triangle
-    if (det < 0.0001f)
+    if (det < 1e-8)
         return false;
 
     // Calculate u and make sure u <= 1
@@ -142,12 +142,9 @@ public:
     }
 
     virtual bool hit(const ray &r, float t_min, float t_max, hit_record &rec) const {
-        if (dot(normal, r.direction()) >= 0)
-            return false;
-
         float t, u, v;
         bool is_hit = IntersectTriangle(r.origin(), r.direction(), vertex[0], vertex[1], vertex[2], &t, &u, &v);
-        is_hit = is_hit && t >= t_min && t <= t_max;
+        is_hit = is_hit && t > t_min && t < t_max;
         if (is_hit) {
             rec.normal = normal;
             rec.mat_ptr = mat_ptr;

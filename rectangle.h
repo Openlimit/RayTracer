@@ -73,6 +73,22 @@ public:
         return true;
     }
 
+    virtual float pdf_value(const vec3 &o, const vec3 &v) const {
+        hit_record rec;
+        if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
+            float area = (y1 - y0) * (z1 - z0);
+            float distance_squared = rec.t * rec.t * v.squared_length();
+            float cosine = fabs(dot(v, rec.normal) / v.length());
+            return distance_squared / (cosine * area);
+        } else
+            return 0;
+    }
+
+    virtual vec3 random(const vec3 &o) const {
+        vec3 random_point = vec3(k, y0 + drand48() * (y1 - y0), z0 + drand48() * (z1 - z0));
+        return random_point - o;
+    }
+
     material *mp;
     float y0, y1, z0, z1, k;
 };
@@ -80,7 +96,7 @@ public:
 
 bool xy_rect::hit(const ray &r, float t0, float t1, hit_record &rec) const {
     float t = (k - r.origin().z()) / r.direction().z();
-    if (t < t0 || t > t1)
+    if (!(t > t0 && t < t1))
         return false;
     float x = r.origin().x() + t * r.direction().x();
     float y = r.origin().y() + t * r.direction().y();
@@ -98,7 +114,7 @@ bool xy_rect::hit(const ray &r, float t0, float t1, hit_record &rec) const {
 
 bool xz_rect::hit(const ray &r, float t0, float t1, hit_record &rec) const {
     float t = (k - r.origin().y()) / r.direction().y();
-    if (t < t0 || t > t1)
+    if (!(t > t0 && t < t1))
         return false;
     float x = r.origin().x() + t * r.direction().x();
     float z = r.origin().z() + t * r.direction().z();
@@ -115,7 +131,7 @@ bool xz_rect::hit(const ray &r, float t0, float t1, hit_record &rec) const {
 
 bool yz_rect::hit(const ray &r, float t0, float t1, hit_record &rec) const {
     float t = (k - r.origin().x()) / r.direction().x();
-    if (t < t0 || t > t1)
+    if (!(t > t0 && t < t1))
         return false;
     float y = r.origin().y() + t * r.direction().y();
     float z = r.origin().z() + t * r.direction().z();

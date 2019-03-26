@@ -7,13 +7,11 @@
 #include "hitable_list.h"
 #include "camera.h"
 #include "bvh.h"
-#include "texture.h"
 #include "rectangle.h"
-#include "box.h"
 #include "material.h"
 #include "triangle.h"
 #include "obj_load.h"
-#include "texture.h"
+#include "Light.h"
 
 using namespace std;
 
@@ -25,55 +23,7 @@ inline vec3 de_nan(const vec3 &c) {
     return temp;
 }
 
-vec3 color(const ray &r, hitable *world, pdf *light_pdf, int depth) {
-    hit_record rec;
-    if (world->hit(r, 0.001, FLT_MAX, rec)) {
-        ray scattered;
-        vec3 emitted = rec.mat_ptr->emitted(r, rec);
-        scatter_record srec;
-        float pdf_value;
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, srec)) {
-            if (light_pdf == nullptr) {
-                scattered = ray(rec.p, srec.pdf_ptr->generate(rec), r.time());
-                pdf_value = srec.pdf_ptr->value(rec, scattered.direction());
-            } else {
-                mixture_pdf p(light_pdf, srec.pdf_ptr);
-                scattered = ray(rec.p, p.generate(rec), r.time());
-                pdf_value = p.value(rec, scattered.direction());
-            }
-
-            return emitted +
-                   srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered) *
-                   color(scattered, world, light_pdf, depth + 1) / pdf_value;
-        } else {
-            return emitted;
-        }
-    } else {
-        return vec3(0, 0, 0);
-    }
-}
-
-hitable *cornell_box() {
-    hitable **list = new hitable *[8];
-    int i = 0;
-    pdf *cosine = new cosine_pdf();
-    material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)), cosine);
-    material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)), cosine);
-    material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)), cosine);
-    material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
-    list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
-    list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
-    list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
-    list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
-    list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
-    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
-    list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18), vec3(130, 0, 65));
-    list[i++] = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), white), 15), vec3(265, 0, 295));
-
-    return new hitable_list(list, i);
-}
-
-void room(int nx, int ny, camera **cam, hitable **world, pdf **light) {
+void room(int nx, int ny, camera **cam, hitable **world, vector<Light *> &light_list) {
     vec3 lookfrom(0, 0, 4);
     vec3 lookat(0, 0, 0);
     vec3 up(0, 1, 0);
@@ -82,14 +32,20 @@ void room(int nx, int ny, camera **cam, hitable **world, pdf **light) {
     float vfov = 50.0;
     *cam = new camera(lookfrom, lookat, up, vfov, float(nx) / float(ny), aperture, dist_to_focus, 0.0, 1.0);
 
+    mtl m;
+    m.ka = vec3(50, 50, 40);
+    material *phong = new Phong(m);
+    hitable *light_shape = new sphere(vec3(0, 1.589, -1.274), 0.2, phong);
+    Light *light = new Light(light_shape, m.ka);
+    light_list.emplace_back(light);
+
     vector<hitable *> mesh;
     load_obj("room.obj", mesh);
+    mesh.emplace_back(light_shape);
     *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
-    hitable *light_shape = new sphere(vec3(0, 1.589, -1.274), 0.2, nullptr);
-    *light = new hitable_pdf(light_shape);
 }
 
-void cup(int nx, int ny, camera **cam, hitable **world, pdf **light) {
+void cup(int nx, int ny, camera **cam, hitable **world, vector<Light *> &light_list) {
     vec3 lookfrom(0.0, 0.64, 0.52);
     vec3 lookat(0.0, 0.40, 0.3);
     vec3 up(0, 1, 0);
@@ -98,9 +54,12 @@ void cup(int nx, int ny, camera **cam, hitable **world, pdf **light) {
     float vfov = 60.0;
     *cam = new camera(lookfrom, lookat, up, vfov, float(nx) / float(ny), aperture, dist_to_focus, 0.0, 1.0);
 
-    hitable *light_shape = new yz_rect(1.0246, 2.0246, -0.5, 0.5, -2.058771896,
-                                       new diffuse_light(new constant_texture(vec3(15, 15, 15))));
-    *light = new hitable_pdf(light_shape);
+    mtl m;
+    m.ka = vec3(40, 40, 40);
+    material *phong = new Phong(m);
+    hitable *light_shape = new yz_rect(1.0246, 2.0246, -0.5, 0.5, -2.758771896, phong);
+    Light *light = new Light(light_shape, m.ka);
+    light_list.emplace_back(light);
 
     vector<hitable *> mesh;
     load_obj("cup.obj", mesh);
@@ -108,16 +67,112 @@ void cup(int nx, int ny, camera **cam, hitable **world, pdf **light) {
     *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
 }
 
+void VeachMIS(int nx, int ny, camera **cam, hitable **world, vector<Light *> &light_list) {
+    vec3 lookfrom(0.0, 2.0, 15.0);
+    vec3 lookat(0.0, 1.69521, 14.0476);
+    vec3 up(0.0, 0.952421, -0.304787);
+    float dist_to_focus = 1;
+    float aperture = 0.0;
+    float vfov = 40.0;
+    *cam = new camera(lookfrom, lookat, up, vfov, float(nx) / float(ny), aperture, dist_to_focus, 0.0, 1.0);
+
+    mtl m1;
+    m1.ka = vec3(800, 800, 800);
+    hitable *light_shape1 = new sphere(vec3(-10, 10, 4), 0.5, new Phong(m1));
+    Light *light1 = new Light(light_shape1, m1.ka);
+    light_list.emplace_back(light1);
+
+    mtl m2;
+    m2.ka = vec3(901.803, 901.803, 901.803);
+    hitable *light_shape2 = new sphere(vec3(3.75, 0, 0), 0.033, new Phong(m2));
+    Light *light2 = new Light(light_shape2, m2.ka);
+    light_list.emplace_back(light2);
+
+    mtl m3;
+    m3.ka = vec3(100, 100, 100);
+    hitable *light_shape3 = new sphere(vec3(1.25, 0, 0), 0.1, new Phong(m3));
+    Light *light3 = new Light(light_shape3, m3.ka);
+    light_list.emplace_back(light3);
+
+    mtl m4;
+    m4.ka = vec3(11.1111, 11.1111, 11.1111);
+    hitable *light_shape4 = new sphere(vec3(-1.25, 0, 0), 0.3, new Phong(m4));
+    Light *light4 = new Light(light_shape4, m4.ka);
+    light_list.emplace_back(light4);
+
+    mtl m5;
+    m5.ka = vec3(1.23457, 1.23457, 1.23457);
+    hitable *light_shape5 = new sphere(vec3(-3.75, 0, 0), 0.9, new Phong(m5));
+    Light *light5 = new Light(light_shape5, m5.ka);
+    light_list.emplace_back(light5);
+
+    vector<hitable *> mesh;
+    load_obj("VeachMIS.obj", mesh);
+    mesh.emplace_back(light_shape1);
+    mesh.emplace_back(light_shape2);
+    mesh.emplace_back(light_shape3);
+    mesh.emplace_back(light_shape4);
+    mesh.emplace_back(light_shape5);
+    *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
+}
+
+vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int depth) {
+    if (depth > 10)
+        return vec3(0, 0, 0);
+    hit_record rec;
+    if (world->hit(r, 0.001, FLT_MAX, rec)) {
+        if (rec.mat_ptr->is_light())
+            return rec.mat_ptr->emitted(r, rec);
+        vec3 color_from_refraction(0);
+        vec3 color_from_specular(0);
+        vec3 color_from_recursive_indirect_light(0);
+        vec3 color_from_light_sources(0);
+
+        scatter_record refract_sr;
+        if (rec.mat_ptr->refraction(r, rec, refract_sr)) {
+            color_from_refraction = refract_sr.attenuation * radiance(refract_sr.r_out, world, light_list, depth + 1);
+        }
+
+        scatter_record specular_sr;
+        if (rec.mat_ptr->specular(r, rec, specular_sr)) {
+            color_from_specular = specular_sr.attenuation * radiance(specular_sr.r_out, world, light_list, depth + 1);
+        }
+
+        scatter_record diffuse_sr;
+        if (rec.mat_ptr->diffuse(r, rec, diffuse_sr)) {
+            for (int i = 0; i < light_list.size(); ++i) {
+                Light *light = light_list[i];
+                ray light_ray = ray(rec.p, light->get_direction(rec.p));
+                float cos_theta = dot(light_ray.direction(), rec.normal);
+                if (cos_theta > 0 && light->trace(light_ray, world)) {
+                    color_from_light_sources +=
+                            diffuse_sr.attenuation * cos_theta *
+                            light->get_intensity(light_ray) / (light->get_pdf(light_ray) * M_PI);
+                }
+            }
+
+            color_from_recursive_indirect_light =
+                    diffuse_sr.attenuation * radiance(diffuse_sr.r_out, world, light_list, depth + 1);
+        }
+
+        return color_from_refraction + color_from_specular + color_from_light_sources +
+               color_from_recursive_indirect_light;
+    } else {
+        return vec3(0);
+    }
+}
+
 int main() {
     ofstream outfile("hellograph.ppm");
-    int nx = 200, ny = 200, ns = 10;
+    int nx = 200, ny = 200, ns = 100;
     outfile << "P3\n" << nx << " " << ny << "\n255\n";
 
     camera *cam;
     hitable *world;
-    pdf *light_pdf;
-//    room(nx, ny, &cam, &world, &light_pdf);
-    cup(nx, ny, &cam, &world, &light_pdf);
+    vector<Light *> light_list;
+//    room(nx, ny, &cam, &world, light_list);
+    cup(nx, ny, &cam, &world, light_list);
+//    VeachMIS(nx, ny, &cam, &world, light_list);
 
     for (int j = ny - 1; j >= 0; --j) {
         cout << j << endl;
@@ -127,7 +182,7 @@ int main() {
                 float u = float(i + drand48()) / nx;
                 float v = float(j + drand48()) / ny;
                 ray r = cam->get_ray(u, v);
-                col += de_nan(color(r, world, light_pdf, 0));
+                col += de_nan(radiance(r, world, light_list, 0));
             }
 
             col /= float(ns);

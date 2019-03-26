@@ -68,6 +68,10 @@ public:
         e[2] = v.e[2];
     }
 
+    vec3(float v) {
+        e[0] = e[1] = e[2] = v;
+    }
+
     inline float x() const { return e[0]; }
 
     inline float y() const { return e[1]; }

@@ -17,7 +17,7 @@ public:
 
     ray(const vec3 &a, const vec3 &b, float ti = 0.0) {
         A = a;
-        B = b;
+        B = unit_vector(b);
         _time = ti;
     }
 

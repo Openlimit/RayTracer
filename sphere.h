@@ -6,7 +6,17 @@
 #define RAYTRACER_SPHERE_H
 
 #include "hitable.h"
-#include "pdf.h"
+#include "onb.h"
+
+inline vec3 random_to_sphere(float radius, float distance_squared) {
+    float r1 = drand48();
+    float r2 = drand48();
+    float z = 1 + r2 * (sqrt(1 - radius * radius / distance_squared) - 1);
+    float phi = 2 * M_PI * r1;
+    float x = cos(phi) * sqrt(1 - z * z);
+    float y = sin(phi) * sqrt(1 - z * z);
+    return vec3(x, y, z);
+}
 
 class sphere : public hitable {
 public:
