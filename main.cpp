@@ -162,17 +162,22 @@ vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int dep
     }
 }
 
-int main() {
-    ofstream outfile("hellograph.ppm");
-    int nx = 100, ny = 100, ns = 1000;
+void render(const string &name) {
+    ofstream outfile(name + ".ppm");
+    int nx = 512, ny = 512, ns = 2000;
     outfile << "P3\n" << nx << " " << ny << "\n255\n";
 
     camera *cam;
     hitable *world;
     vector<Light *> light_list;
-    room(nx, ny, &cam, &world, light_list);
-//    cup(nx, ny, &cam, &world, light_list);
-//    VeachMIS(nx, ny, &cam, &world, light_list);
+    if (name == string("room"))
+        room(nx, ny, &cam, &world, light_list);
+    else if (name == string("cup"))
+        cup(nx, ny, &cam, &world, light_list);
+    else if (name == string("VeachMIS"))
+        VeachMIS(nx, ny, &cam, &world, light_list);
+    else
+        return;
 
     for (int j = ny - 1; j >= 0; --j) {
         cout << j << endl;
@@ -194,6 +199,12 @@ int main() {
         }
     }
     outfile.close();
+}
+
+int main() {
+//    render("room");
+    render("cup");
+    render("VeachMIS");
 
     return 0;
 }
