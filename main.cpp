@@ -164,7 +164,7 @@ vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int dep
 
 int main() {
     ofstream outfile("hellograph.ppm");
-    int nx = 200, ny = 200, ns = 10;
+    int nx = 100, ny = 100, ns = 1000;
     outfile << "P3\n" << nx << " " << ny << "\n255\n";
 
     camera *cam;

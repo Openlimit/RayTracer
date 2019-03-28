@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 
+#ifdef _WIN32
+
 #define drand48_m 0x100000000LL
 #define drand48_c 0xB16
 #define drand48_a 0x5DEECE66DLL
@@ -25,5 +27,7 @@ void srand48(unsigned int i)
 {
     drand48_seed  = (((long long int)i) << 16) | rand();
 }
+
+#endif
 
 #endif //RAYTRACER_RAND48_H
