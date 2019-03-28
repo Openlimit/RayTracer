@@ -40,7 +40,7 @@ void room(int nx, int ny, camera **cam, hitable **world, vector<Light *> &light_
     light_list.emplace_back(light);
 
     vector<hitable *> mesh;
-    load_obj("room.obj", mesh);
+    load_obj("../objects/", "room.obj", mesh);
     mesh.emplace_back(light_shape);
     *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
 }
@@ -62,7 +62,7 @@ void cup(int nx, int ny, camera **cam, hitable **world, vector<Light *> &light_l
     light_list.emplace_back(light);
 
     vector<hitable *> mesh;
-    load_obj("cup.obj", mesh);
+    load_obj("../objects/", "cup.obj", mesh);
     mesh.emplace_back(light_shape);
     *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
 }
@@ -107,7 +107,7 @@ void VeachMIS(int nx, int ny, camera **cam, hitable **world, vector<Light *> &li
     light_list.emplace_back(light5);
 
     vector<hitable *> mesh;
-    load_obj("VeachMIS.obj", mesh);
+    load_obj("../objects/", "VeachMIS.obj", mesh);
     mesh.emplace_back(light_shape1);
     mesh.emplace_back(light_shape2);
     mesh.emplace_back(light_shape3);
@@ -164,14 +164,14 @@ vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int dep
 
 int main() {
     ofstream outfile("hellograph.ppm");
-    int nx = 200, ny = 200, ns = 100;
+    int nx = 200, ny = 200, ns = 10;
     outfile << "P3\n" << nx << " " << ny << "\n255\n";
 
     camera *cam;
     hitable *world;
     vector<Light *> light_list;
-//    room(nx, ny, &cam, &world, light_list);
-    cup(nx, ny, &cam, &world, light_list);
+    room(nx, ny, &cam, &world, light_list);
+//    cup(nx, ny, &cam, &world, light_list);
 //    VeachMIS(nx, ny, &cam, &world, light_list);
 
     for (int j = ny - 1; j >= 0; --j) {

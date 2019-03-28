@@ -65,8 +65,8 @@ void load_mtl(const string &name, map<string, Phong *> &mtl_map) {
         mtl_map[mtl_name] = new Phong(m);
 }
 
-void load_obj(const string &name, vector<hitable *> &mesh) {
-    ifstream fs(name, std::ios::in);
+void load_obj(const string &dir_path, const string &name, vector<hitable *> &mesh) {
+    ifstream fs(dir_path + name, std::ios::in);
     map<string, Phong *> mtl_map;
     vector<vec3> points;
     vector<vec3> vns;
@@ -82,7 +82,7 @@ void load_obj(const string &name, vector<hitable *> &mesh) {
         } else if (flag == "mtllib") {
             string mtl_name;
             fs >> mtl_name;
-            load_mtl(mtl_name, mtl_map);
+            load_mtl(dir_path + mtl_name, mtl_map);
         } else if (flag == "v") {
             vec3 p;
             fs >> p[0] >> p[1] >> p[2];
