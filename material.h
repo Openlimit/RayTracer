@@ -9,9 +9,9 @@
 #include "hitable.h"
 #include "onb.h"
 
-inline vec3 random_direction() {
-    float r1 = drand48();
-    float r2 = drand48();
+inline vec3 random_direction(float &r1, float &r2) {
+    r1 = drand48();
+    r2 = drand48();
     float sinTheta = sqrtf(1 - r1 * r1);
     float phi = 2 * M_PI * r2;
     float x = sinTheta * cosf(phi);
@@ -52,6 +52,8 @@ vec3 reflect(const vec3 &v, const vec3 &n) {
 struct scatter_record {
     ray r_out;
     vec3 attenuation;
+    float r1;
+    float r2;
 };
 
 class material {
@@ -149,7 +151,7 @@ public:
 
         onb uvw;
         uvw.build_from_w(rec.normal);
-        vec3 dir = uvw.local(random_direction());
+        vec3 dir = uvw.local(random_direction(sr.r1, sr.r2));
         sr.r_out = ray(rec.p, dir);
         sr.attenuation = phong_mtl.kd;
         return true;

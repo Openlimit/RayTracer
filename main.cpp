@@ -155,16 +155,16 @@ vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int dep
                     diffuse_sr.attenuation * radiance(diffuse_sr.r_out, world, light_list, depth + 1);
         }
 
-        return color_from_refraction + color_from_specular + color_from_light_sources +
-               color_from_recursive_indirect_light;
+        vec3 color = color_from_refraction + color_from_specular + color_from_light_sources +
+                     color_from_recursive_indirect_light;
+        return color;
     } else {
         return vec3(0);
     }
 }
 
-void render(const string &name) {
-    ofstream outfile(name + ".ppm");
-    int nx = 512, ny = 512, ns = 2000;
+void render(const string &name, int nx = 200, int ny = 200, int ns = 100) {
+    ofstream outfile(name + ".ppm");;
     outfile << "P3\n" << nx << " " << ny << "\n255\n";
 
     camera *cam;
@@ -202,9 +202,9 @@ void render(const string &name) {
 }
 
 int main() {
-//    render("room");
-    render("cup");
-    render("VeachMIS");
+    render("room", 512, 512, 2000);
+    render("cup", 512, 512, 2000);
+    render("VeachMIS", 1152, 864, 10);
 
     return 0;
 }
