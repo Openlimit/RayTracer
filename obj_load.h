@@ -111,21 +111,12 @@ void load_obj(const string &dir_path, const string &name, vector<hitable *> &mes
 //            if (cur_mtl != string("breakfast_room_cup_Material_005"))
 //                continue;
 
-            if (face.size() == 3) {
-                hitable *tri = new triangle(points[face[0][0]], points[face[1][0]], points[face[2][0]],
-                                            vns[face[0][2]], vns[face[1][2]], vns[face[2][2]], mtl_map[cur_mtl]);
+            for (int i = 2; i < face.size(); ++i) {
+                hitable *tri = new triangle(points[face[0][0]], points[face[i - 1][0]], points[face[i][0]],
+                                            vns[face[0][2]], vns[face[i - 1][2]], vns[face[i][2]], mtl_map[cur_mtl]);
                 mesh.emplace_back(tri);
-            } else if (face.size() == 4) {
-                hitable *tri1 = new triangle(points[face[0][0]], points[face[1][0]], points[face[2][0]],
-                                             vns[face[0][2]], vns[face[1][2]], vns[face[2][2]], mtl_map[cur_mtl]);
-                mesh.emplace_back(tri1);
-
-                hitable *tri2 = new triangle(points[face[0][0]], points[face[2][0]], points[face[3][0]],
-                                             vns[face[0][2]], vns[face[2][2]], vns[face[3][2]], mtl_map[cur_mtl]);
-                mesh.emplace_back(tri2);
-            } else {
-                continue;
             }
+
         } else {
             string s;
             getline(fs, s);

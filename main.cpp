@@ -116,13 +116,13 @@ void VeachMIS(int nx, int ny, camera **cam, hitable **world, vector<Light *> &li
     *world = new bvh(mesh.data(), mesh.size(), 0, FLT_MAX);
 }
 
-vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int depth) {
+vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int depth, int type = 0) {
     if (depth > 10)
         return vec3(0, 0, 0);
     hit_record rec;
     if (world->hit(r, 0.001, FLT_MAX, rec)) {
         if (rec.mat_ptr->is_light())
-            return rec.mat_ptr->emitted(r, rec);
+            return type == 0 ? rec.mat_ptr->emitted(r, rec) : vec3(0);
         vec3 color_from_refraction(0);
         vec3 color_from_specular(0);
         vec3 color_from_recursive_indirect_light(0);
@@ -130,12 +130,14 @@ vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int dep
 
         scatter_record refract_sr;
         if (rec.mat_ptr->refraction(r, rec, refract_sr)) {
-            color_from_refraction = refract_sr.attenuation * radiance(refract_sr.r_out, world, light_list, depth + 1);
+            color_from_refraction =
+                    refract_sr.attenuation * radiance(refract_sr.r_out, world, light_list, depth + 1, type);
         }
 
         scatter_record specular_sr;
         if (rec.mat_ptr->specular(r, rec, specular_sr)) {
-            color_from_specular = specular_sr.attenuation * radiance(specular_sr.r_out, world, light_list, depth + 1);
+            color_from_specular =
+                    specular_sr.attenuation * radiance(specular_sr.r_out, world, light_list, depth + 1, type);
         }
 
         scatter_record diffuse_sr;
@@ -152,12 +154,11 @@ vec3 radiance(const ray &r, hitable *world, vector<Light *> &light_list, int dep
             }
 
             color_from_recursive_indirect_light =
-                    diffuse_sr.attenuation * radiance(diffuse_sr.r_out, world, light_list, depth + 1);
+                    diffuse_sr.attenuation * radiance(diffuse_sr.r_out, world, light_list, depth + 1, 1);
         }
 
-        vec3 color = color_from_refraction + color_from_specular + color_from_light_sources +
-                     color_from_recursive_indirect_light;
-        return color;
+        return color_from_refraction + color_from_specular + color_from_light_sources +
+               color_from_recursive_indirect_light;
     } else {
         return vec3(0);
     }
@@ -202,8 +203,8 @@ void render(const string &name, int nx = 200, int ny = 200, int ns = 100) {
 }
 
 int main() {
-    render("room", 512, 512, 2000);
-    render("cup", 512, 512, 2000);
+    render("room", 512, 512, 1000);
+    render("cup", 512, 512, 1000);
     render("VeachMIS", 1152, 864, 10);
 
     return 0;
